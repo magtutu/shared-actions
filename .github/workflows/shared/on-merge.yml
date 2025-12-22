@@ -1,0 +1,40 @@
+name: On Merge Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        description: Application name to deploy
+        required: true
+        type: string
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    permissions:
+      id-token: write
+    uses: ./.github/workflows/shared/deploy.yml
+    with:
+      environment: staging
+      app-name: ${{ inputs.app-name }}
+  
+  approve-production:
+    name: Approve Production Deployment
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Approval gate
+        run: |
+          echo "✅ Production deployment approved"
+          echo "Proceeding to production deployment..."
+  
+  deploy-production:
+    name: Deploy to Production
+    needs: approve-production
+    permissions:
+      id-token: write
+    uses: ./.github/workflows/shared/deploy.yml
+    with:
+      environment: production
+      app-name: ${{ inputs.app-name }}

@@ -4,17 +4,17 @@ This repository contains reusable GitHub Actions workflows that can be called fr
 
 ## Public API
 
-### merge-main.yml - Main Deployment Pipeline
+### on-merge.yml - Deployment Pipeline on Merge
 
 **This is the only workflow you should call from consumer repositories.**
 
-Orchestrates the complete deployment pipeline: validation → staging → production (with approval).
+Orchestrates the complete deployment pipeline: staging → approval → production.
 
 **Usage**:
 ```yaml
 jobs:
   deploy:
-    uses: YOUR_USERNAME/shared-actions/.github/workflows/merge-main.yml@main
+    uses: YOUR_USERNAME/shared-actions/.github/workflows/shared/on-merge.yml@main
     with:
       app-name: your-repo-name
 ```
@@ -23,10 +23,9 @@ jobs:
 - `app-name` (required): Name of your application/repository
 
 **What it does**:
-1. Validates your code
-2. Deploys to staging environment
-3. Waits for approval (if configured)
-4. Deploys to production environment
+1. Deploys to staging environment
+2. Waits for approval (if configured)
+3. Deploys to production environment
 
 **Requirements**:
 - Your repository name should match the `app-name` input
@@ -35,12 +34,11 @@ jobs:
 
 ## Internal Workflows
 
-The following workflows are used internally by `merge-main.yml` and should not be called directly:
+The following workflows are used internally by `on-merge.yml` and should not be called directly:
 
-- `deploy.yml` - Handles deployment to a specific environment
-- `validate.yml` - Runs validation checks
+- `shared/deploy.yml` - Handles deployment to a specific environment
 
-While these are technically callable, they are not part of the public API and may change without notice.
+While this is technically callable, it is not part of the public API and may change without notice.
 
 ## Environment Configuration
 

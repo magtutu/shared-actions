@@ -28,12 +28,29 @@ jobs:
     # Required for OIDC authentication with AWS
     permissions:
       id-token: write
-      contents: read
     
     outputs:
       url: ${{ steps.deploy.outputs.url }}
     
     steps:
+      - name: Check secret access
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          echo "🔍 Checking secret access in deploy job (${{ inputs.environment }} environment)..."
+          if [ -z "$DEPLOY_TOKEN" ]; then
+            echo "❌ DEPLOY_TOKEN is NOT accessible"
+          else
+            echo "✅ DEPLOY_TOKEN is accessible: ${DEPLOY_TOKEN:0:10}..."
+          fi
+          
+          if [ -z "$API_KEY" ]; then
+            echo "❌ API_KEY is NOT accessible"
+          else
+            echo "✅ API_KEY is accessible: ${API_KEY:0:10}..."
+          fi
+      
       - name: Extract calling repository name
         id: repo-info
         run: |
@@ -66,41 +83,6 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ steps.repo-info.outputs.role-name }}
           aws-region: ${{ secrets.AWS_REGION }}
           role-session-name: github-actions-${{ inputs.app-name }}-${{ inputs.environment }}
-      
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Validate environment
-        run: |
-          echo "Deploying ${{ inputs.app-name }}"
-          echo "Target environment: ${{ inputs.environment }}"
-          
-          # Validate environment name
-          if [[ "${{ inputs.environment }}" != "staging" && "${{ inputs.environment }}" != "production" ]]; then
-            echo "Error: Invalid environment. Must be 'staging' or 'production'"
-            exit 1
-          fi
-      
-      - name: Check deployment token
-        env:
-          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
-          API_KEY: ${{ secrets.API_KEY }}
-        run: |
-          echo "🔍 Checking secret access in deploy job (${{ inputs.environment }} environment)..."
-          if [ -z "$DEPLOY_TOKEN" ]; then
-            echo "❌ DEPLOY_TOKEN is NOT accessible"
-          else
-            echo "✅ DEPLOY_TOKEN is accessible: ${DEPLOY_TOKEN:0:10}..."
-          fi
-          
-          if [ -z "$API_KEY" ]; then
-            echo "❌ API_KEY is NOT accessible"
-          else
-            echo "✅ API_KEY is accessible: ${API_KEY:0:10}..."
-          fi
-          
-          echo "✓ Using AWS OIDC authentication"
-          echo "✓ Role: deployment-role-${{ steps.repo-info.outputs.calling-repo }}"
       
       - name: Login to Amazon ECR
         id: login-ecr
