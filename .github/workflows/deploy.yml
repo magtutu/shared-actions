@@ -1,0 +1,157 @@
+name: Reusable Deploy Workflow
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Target environment (staging or production)
+        required: true
+        type: string
+      app-name:
+        description: Application name to deploy
+        required: true
+        type: string
+    outputs:
+      deployment-url:
+        description: URL where the app was deployed
+        value: ${{ jobs.deploy.outputs.url }}
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    # This is key: the environment controls access to secrets and can require approvals
+    environment: 
+      name: ${{ inputs.environment }}
+      url: ${{ steps.deploy.outputs.url }}
+    
+    # Required for OIDC authentication with AWS
+    permissions:
+      id-token: write
+      contents: read
+    
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    
+    steps:
+      - name: Extract calling repository name
+        id: repo-info
+        run: |
+          # GitHub provides the calling workflow in GITHUB_WORKFLOW_REF
+          # Format: owner/repo/.github/workflows/workflow.yml@ref
+          WORKFLOW_REF="${{ github.workflow_ref }}"
+          echo "Workflow ref: $WORKFLOW_REF"
+          
+          # Extract repo name from the workflow ref
+          # For reusable workflows, we need to look at the event
+          CALLING_REPO="${{ github.event.repository.name }}"
+          
+          # If this is a workflow_call, the repository is the calling repo
+          if [ "${{ github.event_name }}" = workflow_call ]; then
+            # The repository context shows the repo where workflow is defined (shared-actions)
+            # But we can extract from workflow_ref which shows the caller
+            echo "This is a reusable workflow call"
+            # For now, use the app-name input as the repo identifier
+            CALLING_REPO="${{ inputs.app-name }}"
+          fi
+          
+          echo "calling-repo=$CALLING_REPO" >> $GITHUB_OUTPUT
+          echo "role-name=deployment-role-$CALLING_REPO" >> $GITHUB_OUTPUT
+          echo "Calling repo: $CALLING_REPO"
+          echo "Role to assume: deployment-role-$CALLING_REPO"
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ steps.repo-info.outputs.role-name }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-session-name: github-actions-${{ inputs.app-name }}-${{ inputs.environment }}
+      
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Validate environment
+        run: |
+          echo "Deploying ${{ inputs.app-name }}"
+          echo "Target environment: ${{ inputs.environment }}"
+          
+          # Validate environment name
+          if [[ "${{ inputs.environment }}" != "staging" && "${{ inputs.environment }}" != "production" ]]; then
+            echo "Error: Invalid environment. Must be 'staging' or 'production'"
+            exit 1
+          fi
+      
+      - name: Check deployment token
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          echo "🔍 Checking secret access in deploy job (${{ inputs.environment }} environment)..."
+          if [ -z "$DEPLOY_TOKEN" ]; then
+            echo "❌ DEPLOY_TOKEN is NOT accessible"
+          else
+            echo "✅ DEPLOY_TOKEN is accessible: ${DEPLOY_TOKEN:0:10}..."
+          fi
+          
+          if [ -z "$API_KEY" ]; then
+            echo "❌ API_KEY is NOT accessible"
+          else
+            echo "✅ API_KEY is accessible: ${API_KEY:0:10}..."
+          fi
+          
+          echo "✓ Using AWS OIDC authentication"
+          echo "✓ Role: deployment-role-${{ steps.repo-info.outputs.calling-repo }}"
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      
+      - name: Deploy application
+        id: deploy
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ inputs.app-name }}
+          SERVICE_NAME: ${{ inputs.app-name }}-service
+          CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
+          CALLING_REPO: ${{ steps.repo-info.outputs.calling-repo }}
+          ROLE_NAME: ${{ steps.repo-info.outputs.role-name }}
+        run: |
+          echo "🚀 Deploying ${{ inputs.app-name }} to ${{ inputs.environment }}..."
+          echo "� Uesing role: $ROLE_NAME"
+          echo "� Carlling repo: $CALLING_REPO"
+          echo "🎯 Target service: $SERVICE_NAME"
+          
+          # Verify AWS credentials
+          echo "Verifying AWS credentials..."
+          aws sts get-caller-identity
+          
+          # In a real deployment, you would:
+          # 1. Build and push Docker image
+          # echo "Building Docker image..."
+          # docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          # docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          
+          # 2. Update ECS service
+          # echo "Updating ECS service..."
+          # aws ecs update-service \
+          #   --cluster $CLUSTER_NAME \
+          #   --service $SERVICE_NAME \
+          #   --force-new-deployment
+          
+          # For now, simulate deployment
+          echo "Simulating deployment..."
+          sleep 2
+          
+          # Set output URL based on environment
+          if [ "${{ inputs.environment }}" == production ]; then
+            echo "url=https://${{ inputs.app-name }}.example.com" >> $GITHUB_OUTPUT
+          else
+            echo "url=https://${{ inputs.environment }}-${{ inputs.app-name }}.example.com" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "✅ Deployment successful!"
+      
+      - name: Post-deployment verification
+        run: |
+          echo "Verifying deployment at ${{ steps.deploy.outputs.url }}"
+          echo "Environment: ${{ inputs.environment }}"
