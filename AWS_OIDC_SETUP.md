@@ -50,8 +50,6 @@ aws iam create-open-id-connect-provider \
 
 ## Dynamic Role Selection with Branch Restrictions
 
-Now let me update the documentation to reflect the dynamic role approach you want:
-
 ### Step 2: Create IAM Roles with Dynamic Naming Convention
 
 For each consumer repository, create a role following the pattern: `deployment-role-{repo-name}`
