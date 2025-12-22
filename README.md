@@ -4,7 +4,7 @@ This repository contains reusable GitHub Actions workflows that can be called fr
 
 ## Public API
 
-### on-merge.yml - Deployment Pipeline on Merge
+### app-merge.yml - Deployment Pipeline on Merge
 
 **This is the only workflow you should call from consumer repositories.**
 
@@ -14,7 +14,7 @@ Orchestrates the complete deployment pipeline: staging → approval → producti
 ```yaml
 jobs:
   deploy:
-    uses: YOUR_USERNAME/shared-actions/.github/workflows/shared/on-merge.yml@main
+    uses: YOUR_USERNAME/shared-actions/.github/workflows/app-merge.yml@main
     with:
       app-name: your-repo-name
 ```
@@ -34,9 +34,9 @@ jobs:
 
 ## Internal Workflows
 
-The following workflows are used internally by `on-merge.yml` and should not be called directly:
+The following workflows are used internally by `app-merge.yml` and should not be called directly:
 
-- `shared/deploy.yml` - Handles deployment to a specific environment
+- `app-deploy.yml` - Handles deployment to a specific environment
 
 While this is technically callable, it is not part of the public API and may change without notice.
 
