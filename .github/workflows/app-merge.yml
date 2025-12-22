@@ -13,7 +13,7 @@ jobs:
     name: Deploy to Staging
     permissions:
       id-token: write
-    uses: ./.github/workflows/deploy.yml
+    uses: ./.github/workflows/app-deploy.yml
     with:
       environment: staging
       app-name: ${{ inputs.app-name }}
@@ -34,7 +34,7 @@ jobs:
     needs: approve-production
     permissions:
       id-token: write
-    uses: ./.github/workflows/deploy.yml
+    uses: ./.github/workflows/app-deploy.yml
     with:
       environment: production
       app-name: ${{ inputs.app-name }}
