@@ -35,6 +35,9 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     needs: validate
+    permissions:
+      id-token: write
+      contents: read
     uses: ./.github/workflows/deploy.yml
     with:
       environment: staging
@@ -65,6 +68,9 @@ jobs:
   deploy-production:
     name: Deploy to Production
     needs: approve-production
+    permissions:
+      id-token: write
+      contents: read
     uses: ./.github/workflows/deploy.yml
     with:
       environment: production
