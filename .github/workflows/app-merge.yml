@@ -9,8 +9,19 @@ on:
         type: string
 
 jobs:
+  debug-env:
+    name: Debug Environment Variables
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print environment variables
+        run: |
+          echo "🔍 Environment Variables in shared-actions app-merge workflow:"
+          echo "================================"
+          env | sort
+  
   deploy-staging:
     name: Deploy to Staging
+    needs: debug-env
     permissions:
       id-token: write
     uses: ./.github/workflows/app-deploy.yml
