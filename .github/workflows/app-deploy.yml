@@ -36,19 +36,12 @@ jobs:
       - name: Check secret access
         env:
           DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
-          API_KEY: ${{ secrets.API_KEY }}
         run: |
           echo "🔍 Checking secret access in deploy job (${{ inputs.environment }} environment)..."
           if [ -z "$DEPLOY_TOKEN" ]; then
             echo "❌ DEPLOY_TOKEN is NOT accessible"
           else
             echo "✅ DEPLOY_TOKEN is accessible: ${DEPLOY_TOKEN:0:10}..."
-          fi
-          
-          if [ -z "$API_KEY" ]; then
-            echo "❌ API_KEY is NOT accessible"
-          else
-            echo "✅ API_KEY is accessible: ${API_KEY:0:10}..."
           fi
       
       - name: Extract calling repository name
