@@ -116,43 +116,18 @@ jobs:
           echo "================================"
           env | sort
       
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      - name: List S3 buckets
+        run: |
+          echo "📦 Listing S3 buckets..."
+          aws s3 ls
+          echo "✅ Successfully listed S3 buckets!"
       
       - name: Deploy application
         id: deploy
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ inputs.app-name }}
-          SERVICE_NAME: ${{ inputs.app-name }}-service
-          CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
-          CALLING_REPO: ${{ steps.repo-info.outputs.calling-repo }}
-          ROLE_NAME: ${{ steps.repo-info.outputs.role-name }}
         run: |
           echo "🚀 Deploying ${{ inputs.app-name }} to ${{ inputs.environment }}..."
-          echo "� Using role: $ROLE_NAME"
-          echo "� Carlling repo: $CALLING_REPO"
-          echo "🎯 Target service: $SERVICE_NAME"
           
-          # Verify AWS credentials
-          echo "Verifying AWS credentials..."
-          aws sts get-caller-identity
-          
-          # In a real deployment, you would:
-          # 1. Build and push Docker image
-          # echo "Building Docker image..."
-          # docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          # docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          
-          # 2. Update ECS service
-          # echo "Updating ECS service..."
-          # aws ecs update-service \
-          #   --cluster $CLUSTER_NAME \
-          #   --service $SERVICE_NAME \
-          #   --force-new-deployment
-          
-          # For now, simulate deployment
+          # Simulate deployment
           echo "Simulating deployment..."
           sleep 2
           
