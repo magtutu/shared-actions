@@ -72,6 +72,26 @@ jobs:
           echo "role-name=deployment-role-$CALLING_REPO" >> $GITHUB_OUTPUT
           echo "Calling repo: $CALLING_REPO"
           echo "Role to assume: deployment-role-$CALLING_REPO"
+          
+          # Debug OIDC token claims
+          echo "================================"
+          echo "GitHub Context for OIDC:"
+          echo "  repository: ${{ github.repository }}"
+          echo "  repository_owner: ${{ github.repository_owner }}"
+          echo "  ref: ${{ github.ref }}"
+          echo "  sha: ${{ github.sha }}"
+          echo "  workflow: ${{ github.workflow }}"
+          echo "  event_name: ${{ github.event_name }}"
+          echo "  actor: ${{ github.actor }}"
+          echo "================================"
+      
+      - name: Debug role ARN
+        run: |
+          echo "🔍 Role ARN that will be assumed:"
+          echo "arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ steps.repo-info.outputs.role-name }}"
+          echo ""
+          echo "Expected trust policy sub claim should be:"
+          echo "repo:${{ github.repository }}:ref:${{ github.ref }}"
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -101,7 +121,7 @@ jobs:
           ROLE_NAME: ${{ steps.repo-info.outputs.role-name }}
         run: |
           echo "🚀 Deploying ${{ inputs.app-name }} to ${{ inputs.environment }}..."
-          echo "� Uesing role: $ROLE_NAME"
+          echo "� Using role: $ROLE_NAME"
           echo "� Carlling repo: $CALLING_REPO"
           echo "🎯 Target service: $SERVICE_NAME"
           
