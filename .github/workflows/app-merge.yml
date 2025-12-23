@@ -11,6 +11,7 @@ jobs:
   build:
     name: Build Application
     runs-on: ubuntu-latest
+    environment: staging
     steps:
     - name: Check secret and variable access (app-merge)
       shell: bash
@@ -22,29 +23,12 @@ jobs:
         echo "================================"
         echo DEPLOY_TOKEN: ${DEPLOY_TOKEN}
         echo DEPLOY_INFO: ${DEPLOY_INFO}
-        if [ -z "$GH_PAT" ]; then
-          echo "❌ GH_PAT is NOT accessible"
-        else
-          echo "✅ GH_PAT is accessible"
-        fi
+        echo GH_PAT: ${GH_PAT}
         echo "================================"
-
-    - name: Extract calling repository
-      id: repo-info
-      run: |
-        WORKFLOW_REF="${{ github.workflow_ref }}"
-        echo "Workflow ref: $WORKFLOW_REF"
-        
-        # Extract owner/repo from workflow_ref
-        # Format: owner/repo/.github/workflows/workflow.yml@ref
-        CALLING_REPO=$(echo "$WORKFLOW_REF" | cut -d'/' -f1-2)
-        echo "calling-repo=$CALLING_REPO" >> $GITHUB_OUTPUT
-        echo "Calling repo: $CALLING_REPO"
 
     - name: Checkout calling repository
       uses: actions/checkout@v4
       with:
-        repository: ${{ steps.repo-info.outputs.calling-repo }}
         token: ${{ secrets.GH_PAT }}
         path: app
 
