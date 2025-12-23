@@ -7,16 +7,13 @@ on:
   workflow_call:
     inputs:
       environment:
-        description: Target environment (staging or production)
         required: true
         type: string
       app-name:
-        description: Application name to deploy
         required: true
         type: string
     outputs:
       deployment-url:
-        description: URL where the app was deployed
         value: ${{ jobs.deploy.outputs.url }}
 
 jobs:
@@ -35,17 +32,14 @@ jobs:
     outputs:
       url: ${{ steps.deploy.outputs.url }}
     
-    steps:
-      - name: Check secret access
+    steps:      
+      - name: Check secret and variable access
+        uses: ./check-vars
         env:
           DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
-        run: |
-          echo "🔍 Checking secret access in deploy job (${{ inputs.environment }} environment)..."
-          if [ -z "$DEPLOY_TOKEN" ]; then
-            echo "❌ DEPLOY_TOKEN is NOT accessible"
-          else
-            echo "✅ DEPLOY_TOKEN is accessible: ${DEPLOY_TOKEN:0:10}..."
-          fi
+          DEPLOY_INFO: ${{ vars.DEPLOY_INFO }}
+        with:
+          context-name: app-deploy job (${{ inputs.environment }} environment)
       
       - name: Extract calling repository name
         id: repo-info
