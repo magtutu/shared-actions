@@ -33,7 +33,7 @@ jobs:
       app-name: ${{ inputs.app-name }}
 
   approve-production:
-    name: Approve Production Deployment
+    name: Production Approval
     needs: deploy-staging
     runs-on: ubuntu-latest
     environment: production
