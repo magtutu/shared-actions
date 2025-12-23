@@ -92,6 +92,9 @@ jobs:
           echo ""
           echo "Expected trust policy sub claim should be:"
           echo "repo:${{ github.repository }}:ref:${{ github.ref }}"
+          echo ""
+          echo "🔍 Checking OIDC token (this will be used by AWS):"
+          echo "The actual sub claim in the OIDC token will be checked by AWS"
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -99,6 +102,19 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ steps.repo-info.outputs.role-name }}
           aws-region: us-east-1
           role-session-name: github-actions-${{ inputs.app-name }}-${{ inputs.environment }}
+        continue-on-error: true
+        id: aws-creds
+      
+      - name: Debug AWS credential failure
+        if: steps.aws-creds.outcome == 'failure'
+        run: |
+          echo "❌ Failed to assume role"
+          echo "Role ARN: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ steps.repo-info.outputs.role-name }}"
+          echo "This usually means the trust policy doesn't match the OIDC token claims"
+          echo ""
+          echo "Trust policy should have:"
+          echo '  "token.actions.githubusercontent.com:sub": "repo:${{ github.repository }}:ref:${{ github.ref }}"'
+          exit 1
       
       - name: Print environment variables after AWS config
         run: |
