@@ -33,15 +33,13 @@ jobs:
       app-name: ${{ inputs.app-name }}
 
   approve-production:
-    name: Production Approval
+    name: Approve Production Deployment
     needs: deploy-staging
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Approval gate
-        run: |
-          echo "✅ Production deployment approved"
-          echo "Proceeding to production deployment..."
+      - name: Manual approval required
+        run: echo "✅ Production deployment approved"
 
   deploy-production:
     name: Deploy to Production
