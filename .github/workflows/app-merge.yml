@@ -26,6 +26,7 @@ jobs:
     - name: Checkout calling repository
       uses: actions/checkout@v4
       with:
+        token: ${{ secrets.GH_PAT }}
         path: app
 
     - name: Run make build
