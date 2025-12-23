@@ -12,15 +12,15 @@ jobs:
     name: Build Application
     runs-on: ubuntu-latest
     steps:
-    - name: Download code artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: app-code
-        path: app
+      - name: Download code artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-code
+          path: app
 
-    - name: Run make build
-      working-directory: app
-      run: make build
+      - name: Run make build
+        working-directory: app
+        run: make build
 
   deploy-staging:
     name: Deploy to Staging
