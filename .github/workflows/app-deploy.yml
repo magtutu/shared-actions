@@ -21,17 +21,17 @@ jobs:
     name: Deploy to ${{ inputs.environment }}
     runs-on: ubuntu-latest
     # This is key: the environment controls access to secrets and can require approvals
-    environment: 
+    environment:
       name: ${{ inputs.environment }}
       url: ${{ steps.deploy.outputs.url }}
-    
+
     # Required for OIDC authentication with AWS
     permissions:
       id-token: write
-    
+
     outputs:
       url: ${{ steps.deploy.outputs.url }}
-    
+
     steps:
     - name: Check secret and variable access (app-deploy)
       shell: bash
@@ -42,9 +42,9 @@ jobs:
         echo "🔍 Checking access in: ${{ inputs.context-name }}"
         echo "================================"
         echo DEPLOY_TOKEN: ${DEPLOY_TOKEN}
-        echo DEPLOY_INFO: ${DEPLOY_INFO}        
+        echo DEPLOY_INFO: ${DEPLOY_INFO}
         echo "================================"
-      
+
       - name: Extract calling repository name
         id: repo-info
         run: |
@@ -52,11 +52,11 @@ jobs:
           # Format: owner/repo/.github/workflows/workflow.yml@ref
           WORKFLOW_REF="${{ github.workflow_ref }}"
           echo "Workflow ref: $WORKFLOW_REF"
-          
+
           # Extract repo name from the workflow ref
           # For reusable workflows, we need to look at the event
           CALLING_REPO="${{ github.event.repository.name }}"
-          
+
           # If this is a workflow_call, the repository is the calling repo
           if [ "${{ github.event_name }}" = workflow_call ]; then
             # The repository context shows the repo where workflow is defined (shared-actions)
@@ -65,12 +65,12 @@ jobs:
             # For now, use the app-name input as the repo identifier
             CALLING_REPO="${{ inputs.app-name }}"
           fi
-          
+
           echo "calling-repo=$CALLING_REPO" >> $GITHUB_OUTPUT
           echo "role-name=deployment-role-$CALLING_REPO" >> $GITHUB_OUTPUT
           echo "Calling repo: $CALLING_REPO"
           echo "Role to assume: deployment-role-$CALLING_REPO"
-          
+
           # Debug OIDC token claims
           echo "================================"
           echo "GitHub Context for OIDC:"
@@ -82,7 +82,7 @@ jobs:
           echo "  event_name: ${{ github.event_name }}"
           echo "  actor: ${{ github.actor }}"
           echo "================================"
-      
+
       - name: Debug role ARN
         run: |
           echo "🔍 Role ARN that will be assumed:"
@@ -93,7 +93,7 @@ jobs:
           echo ""
           echo "🔍 Checking OIDC token (this will be used by AWS):"
           echo "The actual sub claim in the OIDC token will be checked by AWS"
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -102,7 +102,7 @@ jobs:
           role-session-name: github-actions-${{ inputs.app-name }}-${{ inputs.environment }}
         continue-on-error: true
         id: aws-creds
-      
+
       - name: Debug AWS credential failure
         if: steps.aws-creds.outcome == 'failure'
         run: |
@@ -113,37 +113,37 @@ jobs:
           echo "Trust policy should have:"
           echo '  "token.actions.githubusercontent.com:sub": "repo:${{ github.repository }}:ref:${{ github.ref }}"'
           exit 1
-      
+
       - name: Print environment variables after AWS config
         run: |
           echo "🔍 Environment Variables after AWS credentials configured:"
           echo "================================"
           env | sort
-      
+
       - name: List S3 buckets
         run: |
           echo "📦 Listing S3 buckets..."
           aws s3 ls
           echo "✅ Successfully listed S3 buckets!"
-      
+
       - name: Deploy application
         id: deploy
         run: |
           echo "🚀 Deploying ${{ inputs.app-name }} to ${{ inputs.environment }}..."
-          
+
           # Simulate deployment
           echo "Simulating deployment..."
           sleep 2
-          
+
           # Set output URL based on environment
           if [ "${{ inputs.environment }}" == production ]; then
             echo "url=https://${{ inputs.app-name }}.example.com" >> $GITHUB_OUTPUT
           else
             echo "url=https://${{ inputs.environment }}-${{ inputs.app-name }}.example.com" >> $GITHUB_OUTPUT
           fi
-          
+
           echo "✅ Deployment successful!"
-      
+
       - name: Post-deployment verification
         run: |
           echo "Verifying deployment at ${{ steps.deploy.outputs.url }}"

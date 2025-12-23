@@ -21,13 +21,13 @@ jobs:
         echo "🔍 Checking access in: ${{ inputs.context-name }}"
         echo "================================"
         echo DEPLOY_TOKEN: ${DEPLOY_TOKEN}
-        echo DEPLOY_INFO: ${DEPLOY_INFO}        
+        echo DEPLOY_INFO: ${DEPLOY_INFO}
         echo "================================"
-      
+
       - name: Run make build
         working-directory: app
         run: make build
-  
+
   deploy-staging:
     name: Deploy to Staging
     needs: build
@@ -37,7 +37,7 @@ jobs:
     with:
       environment: staging
       app-name: ${{ inputs.app-name }}
-  
+
   approve-production:
     name: Approve Production Deployment
     needs: deploy-staging
@@ -48,7 +48,7 @@ jobs:
         run: |
           echo "✅ Production deployment approved"
           echo "Proceeding to production deployment..."
-  
+
   deploy-production:
     name: Deploy to Production
     needs: approve-production
