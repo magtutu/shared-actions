@@ -11,6 +11,7 @@ jobs:
   build:
     name: Build Application
     runs-on: ubuntu-latest
+    environment: build
     steps:
     - name: Check secret and variable access (app-merge)
       shell: bash
